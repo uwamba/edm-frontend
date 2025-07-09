@@ -1,0 +1,36 @@
+{
+  "edms": {
+    "title": "Bienvenue dans le système de gestion électronique des documents",
+    "description": "Téléchargez, archivez, recherchez et gérez facilement vos documents en toute sécurité au même endroit.",
+    "view_documents": "Voir les documents",
+    "upload_document": "Télécharger un document",
+    "click_here": "Cliquez ici pour télécharger votre document",
+    "learn_more": "En savoir plus",
+    "features_title": "Fonctionnalités clés",
+    "features": {
+      "easy_upload": {
+        "title": "Téléchargement facile",
+        "description": "Téléchargez rapidement vos documents grâce à une interface conviviale."
+      },
+      "secure_storage": {
+        "title": "Stockage sécurisé",
+        "description": "Vos documents sont stockés en toute sécurité avec un contrôle d'accès."
+      },
+      "quick_search": {
+        "title": "Recherche rapide",
+        "description": "Trouvez instantanément vos documents grâce à une recherche puissante."
+      }
+    },
+    "benefits": {
+      "title": "Pourquoi choisir notre SGED?",
+      "organize_documents": "Gardez tous vos documents organisés et faciles à retrouver.",
+      "increase_productivity": "Gagnez du temps et augmentez la productivité de votre équipe.",
+      "ensure_compliance": "Assurez-vous de la conformité aux réglementations facilement.",
+      "easy_access": "Accédez à vos documents à tout moment, où que vous soyez, depuis n’importe quel appareil."
+    },
+    "footer": {
+      "company_name": "NomDeVotreEntreprise",
+      "rights": "Tous droits réservés."
+    }
+  }
+}

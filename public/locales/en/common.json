@@ -1,0 +1,51 @@
+{
+  "edms": {
+    "title": "Welcome to Electronic Document Management System",
+    "description": "Easily upload, archive, search, and manage your documents securely in one place.",
+    "view_documents": "View Documents",
+    "upload_document": "Upload Document",
+    "click_here": "Click here to upload your document",
+    "learn_more": "Learn More",
+    "features_title": "Key Features",
+    "features_description": "Discover how our EDMS can transform your document management experience.",
+    "features": {
+      "easy_upload": {
+        "title": "Easy Upload",
+        "description": "Upload your documents quickly using a user-friendly interface."
+      },
+      "secure_storage": {
+        "title": "Secure Storage",
+        "description": "Your documents are stored securely with access control."
+      },
+      "quick_search": {
+        "title": "Quick Search",
+        "description": "Find documents instantly with powerful search capabilities."
+      }
+    },
+    "benefits": {
+      "title": "Why Choose Our EDMS?",
+      "organize_documents": "Keep all your documents organized and easy to retrieve.",
+      "increase_productivity": "Save time and increase your team’s productivity.",
+      "ensure_compliance": "Maintain compliance with industry regulations effortlessly.",
+      "easy_access": "Access documents anytime, anywhere from any device."
+    },
+    "footer": {
+      "company_name": "YourCompanyName",
+      "rights": "All rights reserved."
+    },
+    "register_form": {
+      "title": "Register to Access EDMS",
+      "description": "Fill out the form below to create your account and start managing your documents.",
+      "fields": {
+        "name": "Name",
+        "email": "Email",
+        "password": "Password",
+        "confirm_password": "Confirm Password"
+      },
+      "submit_button": "Register",
+      "success_message": "Registration successful! You can now log in.",
+      "error_message": "There was an error during registration. Please try again."
+    }
+
+  }
+}
