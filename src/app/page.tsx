@@ -1,16 +1,17 @@
 "use client";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import "@/i18n.client";
+import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 
 export default function Home() {
   const { t } = useTranslation();
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
+    <main className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <Header />
+
       <section className="flex-grow flex flex-col items-center justify-center px-6 py-20 text-center max-w-4xl mx-auto">
-        <LanguageSwitcher />
-        <h1 className="text-5xl font-extrabold mb-6">{t("edms.title")}  </h1>
         <h2 className="text-2xl md:text-3xl font-semibold mb-4">{t("edms.click_here")}</h2>
         <p className="text-lg md:text-xl mb-10 max-w-3xl">{t("edms.description")}</p>
 
@@ -57,12 +58,7 @@ export default function Home() {
         </ul>
       </section>
 
-      <footer className="bg-gray-200 dark:bg-gray-900 text-center text-gray-700 dark:text-gray-400 py-8 mt-auto">
-        <p>
-          © {new Date().getFullYear()} {t("edms.footer.company_name")} — {t("edms.footer.rights")}
-        </p>
-        
-      </footer>
+      <Footer />
     </main>
   );
 }

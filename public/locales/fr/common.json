@@ -1,6 +1,10 @@
 {
   "edms": {
     "title": "Bienvenue dans le système de gestion électronique des documents",
+    "nam": "S E D D",
+    "home": "Accueil",
+    "support": "Assistance",
+    "login": "Connexion",
     "description": "Téléchargez, archivez, recherchez et gérez facilement vos documents en toute sécurité au même endroit.",
     "view_documents": "Voir les documents",
     "upload_document": "Télécharger un document",
@@ -31,6 +35,11 @@
     "footer": {
       "company_name": "NomDeVotreEntreprise",
       "rights": "Tous droits réservés."
+    },
+    "menu": {
+      "home": "Accueil",
+      "support": "Assistance",
+      "login": "Connexion"
     }
   }
 }
