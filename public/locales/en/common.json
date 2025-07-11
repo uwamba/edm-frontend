@@ -3,8 +3,9 @@
     "title": "Welcome to Electronic Document Management System",
     "nam": "E D M S",
     "home": "Home",
+    "register": "Register",
     "support": "Support",
-    "login": "login",
+    "login": "Login",
     "description": "Easily upload, archive, search, and manage your documents securely in one place.",
     "view_documents": "View Documents",
     "upload_document": "Upload Document",
@@ -49,6 +50,16 @@
       "submit_button": "Register",
       "success_message": "Registration successful! You can now log in.",
       "error_message": "There was an error during registration. Please try again."
+    },
+    "login_form": {
+      "title": "Login ",
+      "description": "Enter your credentials to access the system.",
+      "fields": {
+        "email": "Email",
+        "password": "Password"
+      },
+      "submit_button": "Login",
+      "error_message": "Invalid email or password. Please try again."
     },
     "menu": {
       "home": "Home",

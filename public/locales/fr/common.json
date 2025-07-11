@@ -3,6 +3,7 @@
     "title": "Bienvenue dans le système de gestion électronique des documents",
     "nam": "S E D D",
     "home": "Accueil",
+    "register": "Inscription",
     "support": "Assistance",
     "login": "Connexion",
     "description": "Téléchargez, archivez, recherchez et gérez facilement vos documents en toute sécurité au même endroit.",
@@ -35,6 +36,16 @@
     "footer": {
       "company_name": "NomDeVotreEntreprise",
       "rights": "Tous droits réservés."
+    },
+    "login_form": {
+      "title": "Connectez-Vous ",
+      "description": "Veuillez entrer vos informations",
+      "fields": {
+        "email": "Votre Email",
+        "password": "Mot de Passe"
+      },
+      "submit_button": "Se connecter",
+      "error_message": "Invalid email or password. Please try again."
     },
     "menu": {
       "home": "Accueil",
