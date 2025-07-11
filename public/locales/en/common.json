@@ -52,7 +52,7 @@
       "error_message": "There was an error during registration. Please try again."
     },
     "login_form": {
-      "title": "Login ",
+      "title": "Login",
       "description": "Enter your credentials to access the system.",
       "fields": {
         "email": "Email",
@@ -61,10 +61,35 @@
       "submit_button": "Login",
       "error_message": "Invalid email or password. Please try again."
     },
+    "departments": {
+      "documents": "Documents",
+      "users": "Users",
+      "it_support": "IT Support",
+      "archives": "Archives",
+      "settings": "Settings",
+      "chief-of-staff": "Office of the Chief of Staff",
+      "cabinet-affairs": "Department of Cabinet Affairs",
+      "legal-affairs": "Legal Affairs Department",
+      "communications": "Communications and Media Department",
+      "protocol": "Protocol and Diplomatic Affairs",
+      "policy-planning": "Strategic Policy and Planning Department",
+      "economic-affairs": "Economic Affairs Department",
+      "security": "Security and Intelligence Office",
+      "audit-compliance": "Internal Audit and Compliance Department",
+      "hr-admin": "Human Resources and Administration Department",
+      "finance-budget": "Finance and Budget Department",
+      "it-department": "Information Technology Department",
+      "public-service-monitoring": "Public Service and Governance Monitoring Unit",
+      "research-documentation": "Research and Documentation Unit",
+      "advisory-units": "Presidential Advisory Units / Councils"
+    },
     "menu": {
       "home": "Home",
       "support": "Support",
       "login": "Login"
+    },
+    "offices": {
+      "presidential_office": "Presidential Office"
     }
   }
 }

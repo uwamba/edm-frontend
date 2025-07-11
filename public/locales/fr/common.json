@@ -38,14 +38,39 @@
       "rights": "Tous droits réservés."
     },
     "login_form": {
-      "title": "Connectez-Vous ",
+      "title": "Connectez-Vous",
       "description": "Veuillez entrer vos informations",
       "fields": {
         "email": "Votre Email",
         "password": "Mot de Passe"
       },
       "submit_button": "Se connecter",
-      "error_message": "Invalid email or password. Please try again."
+      "error_message": "Adresse e-mail ou mot de passe invalide. Veuillez réessayer."
+    },
+    "departments": {
+      "documents": "Documents",
+      "users": "Utilisateurs",
+      "it_support": "Assistance IT",
+      "archives": "Archives",
+      "settings": "Paramètres",
+      "chief-of-staff": "Bureau du Chef de Cabinet",
+      "cabinet-affairs": "Département des Affaires du Cabinet",
+      "legal-affairs": "Département Juridique",
+      "communications": "Communication et Médias",
+      "protocol": "Protocole et Affaires Diplomatiques",
+      "policy-planning": "Planification Stratégique",
+      "economic-affairs": "Affaires Économiques",
+      "security": "Sécurité et Renseignement",
+      "audit-compliance": "Audit et Conformité",
+      "hr-admin": "Ressources Humaines et Administration",
+      "finance-budget": "Finances et Budget",
+      "it-department": "Technologies de l'Information",
+      "public-service-monitoring": "Suivi de la Gouvernance Publique",
+      "research-documentation": "Recherche et Documentation",
+      "advisory-units": "Unités / Conseils Présidentiels"
+    },
+    "offices": {
+      "presidential_office": "Bureau Présidentiel"
     },
     "menu": {
       "home": "Accueil",
