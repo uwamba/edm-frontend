@@ -89,9 +89,9 @@
       "login": "Login"
     },
     "offices": {
-     "office": "Office"
+      "office": "Office"
     },
-    "forms": {
+     "forms": {
       "create_new_form": "Create New Form",
       "view_forms": "View Forms",
       "form_name": "Form Name",

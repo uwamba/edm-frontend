@@ -70,12 +70,30 @@
       "advisory-units": "Unités / Conseils Présidentiels"
     },
     "offices": {
-      "presidential_office": "Bureau Présidentiel"
+      "office": "Bureau"
     },
     "menu": {
       "home": "Accueil",
       "support": "Assistance",
       "login": "Connexion"
+    },
+    "forms": {
+      "create_new_form": "Créer un nouveau formulaire",
+      "view_forms": "Voir les formulaires",
+      "form_name": "Nom du formulaire",
+      "form_description": "Description du formulaire",
+      "submit_form": "Soumettre le formulaire",
+      "form_success_message": "Formulaire soumis avec succès !",
+      "form_error_message": "Erreur lors de la soumission du formulaire. Veuillez réessayer.",
+      "Menu": {
+        "create_new_form": "Créer un nouveau formulaire",
+        "view_forms": "Voir les formulaires",
+        "form_name": "Nom du formulaire",
+        "form_description": "Description du formulaire",
+        "submit_form": "Soumettre le formulaire",
+        "form_success_message": "Formulaire soumis avec succès !",
+        "form_error_message": "Erreur lors de la soumission du formulaire. Veuillez réessayer."
+      }
     }
   }
 }

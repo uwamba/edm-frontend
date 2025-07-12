@@ -10,6 +10,8 @@ import {
   FaBuilding,
   FaLaptop,
   FaSearch,
+  FaWpforms,
+  FaList,
 } from "react-icons/fa";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 
@@ -20,14 +22,14 @@ export default function Sidebar() {
 
   const departments = [
     {
-      slug: "upload",
-      name: t("edms.upload_document", "Upload"),
-      icon: <FaLaptop />,
+      slug: "new",
+      name: t("edms.form.new_document", "New Form"),
+      icon: <FaWpforms />,
     },
     {
-      slug: "search",
-      name: t("edms.view_documents", "Search"),
-      icon: <FaSearch />,
+      slug: "view",
+      name: t("edms.form.view_documents", "View Forms"),
+      icon: <FaList />,
     },
   ];
 
@@ -41,7 +43,7 @@ export default function Sidebar() {
         >
           <span className="flex items-center gap-2">
             <FaBuilding />
-            {t("edms.offices.presidential_office", "Presidential Office")}
+            {t("edms.offices.office", "Office")}
           </span>
           {open ? <FaChevronDown /> : <FaChevronRight />}
         </button>
@@ -52,9 +54,9 @@ export default function Sidebar() {
             {departments.map((dept) => (
               <Link
                 key={dept.slug}
-                href={`/dashboard/presidential/${dept.slug}`}
+                href={`/dashboard/workflow/form/${dept.slug}`}
                 className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
-                  pathname === `/dashboard/presidential/${dept.slug}`
+                  pathname === `/dashboard/workflow/form/${dept.slug}`
                     ? "bg-blue-500 text-white"
                     : "text-gray-800 dark:text-gray-200"
                 }`}
