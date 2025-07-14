@@ -31,6 +31,7 @@ export default function Sidebar() {
       name: t("edms.form.view_documents", "View Forms"),
       icon: <FaList />,
     },
+
   ];
 
   return (
@@ -67,6 +68,20 @@ export default function Sidebar() {
             ))}
           </nav>
         )}
+        <nav className="flex flex-col gap-1 mt-2 ml-4">
+              <Link
+                key="Submissions"
+                href={`/dashboard/workflow/submissions`}
+                className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
+                  pathname === `dashboard/workflow/submission`
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-800 dark:text-gray-200"
+                }`}
+              >
+                <span className="text-base"><FaList />,</span>
+                <span>Submissions</span>
+              </Link>
+          </nav>
       </div>
 
       {/* Language Switcher at Bottom */}

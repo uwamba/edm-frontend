@@ -7,8 +7,10 @@ interface Field {
   id: number;
   label: string;
   type: string;
-  options: string[];
+  options?: string[];
   required: boolean;
+  parentField?: string;
+  parentMapping?: Record<string, string[]>;
 }
 
 interface Form {
@@ -23,6 +25,7 @@ export default function FormsList() {
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [responses, setResponses] = useState<{ [fieldId: number]: any }>({});
+  const [childOptions, setChildOptions] = useState<{ [fieldId: number]: string[] }>({});
 
   useEffect(() => {
     const fetchForms = async () => {
@@ -40,24 +43,78 @@ export default function FormsList() {
   }, []);
 
   const handleInputChange = (field: Field, e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setResponses({
-      ...responses,
-      [field.id]: field.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value,
+    let value: any;
+
+    if (field.type === "checkbox") {
+      value = (e.target as HTMLInputElement).checked;
+    } else if (field.type === "file") {
+      const files = (e.target as HTMLInputElement).files;
+      value = files && files.length > 0 ? files[0] : null;
+    } else {
+      value = e.target.value;
+    }
+
+    setResponses((prev) => ({ ...prev, [field.id]: value }));
+
+    // Handle child fields for nested selects
+    selectedForm?.fields.forEach((f) => {
+      if (f.parentField === field.label && f.parentMapping) {
+        const key = String(value);
+        const mappedOptions = f.parentMapping[key] || [];
+        setChildOptions((prev) => ({
+          ...prev,
+          [f.id]: mappedOptions,
+        }));
+        setResponses((prev) => ({
+          ...prev,
+          [f.id]: "",
+        }));
+      }
     });
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!selectedForm) return;
+
+    // Use FormData to support file uploads
+    const formData = new FormData();
+    formData.append("form_id", String(selectedForm.id));
+
+    // Append each field with key 'field_<id>'
+    Object.entries(responses).forEach(([fieldId, value]) => {
+      const key = `field_${fieldId}`;
+      if (value instanceof File) {
+        formData.append(`data[${key}]`, value);
+      } else {
+        formData.append(`data[${key}]`, value ?? "");
+      }
+    });
+
     try {
-      await axios.post(`http://localhost:8000/api/forms/${selectedForm?.id}/submissions`, {
-        responses,
-      });
-      alert("Form submitted successfully!");
+      await axios.post(
+        `http://localhost:8000/api/form/submissions`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+
+      alert("✅ Form submitted successfully!");
       setSelectedForm(null);
       setResponses({});
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to submit form.");
+      setChildOptions({});
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 422) {
+        console.error("Validation Errors:", error.response.data.errors);
+        alert("❌ Validation failed: " + JSON.stringify(error.response.data.errors));
+      } else {
+        console.error("Error submitting form:", error);
+        alert("❌ Failed to submit form.");
+      }
     }
   };
 
@@ -79,19 +136,18 @@ export default function FormsList() {
         {forms.map((form) => (
           <div
             key={form.id}
-            className="p-4 bg-white shadow rounded-lg hover:shadow-lg transition cursor-pointer"
+            className="p-4 bg-white shadow rounded-lg hover:shadow-lg transition cursor-pointer border border-gray-200"
             onClick={() => {
               setSelectedForm(form);
-              setResponses({}); // reset responses
+              setResponses({});
+              setChildOptions({});
             }}
           >
-            <h2 className="text-xl font-semibold text-gray-700">{form.title}</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{form.title}</h2>
             <p className="text-gray-500 mt-1">
               {form.description?.slice(0, 100) || "No description"}
             </p>
-            <p className="text-sm text-gray-400 mt-2">
-              {form.fields.length} fields
-            </p>
+            <p className="text-sm text-gray-400 mt-2">{form.fields.length} fields</p>
           </div>
         ))}
       </div>
@@ -101,30 +157,27 @@ export default function FormsList() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl"
+              className="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-2xl"
               onClick={() => setSelectedForm(null)}
             >
               ×
             </button>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              {selectedForm.title}
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedForm.title}</h2>
             <p className="text-gray-600 mb-4">{selectedForm.description}</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {selectedForm.fields.map((field) => (
                 <div key={field.id}>
-                  <label className="block font-medium text-gray-700">
+                  <label className="block font-medium text-gray-700 mb-1">
                     {field.label}
-                    {field.required && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
 
+                  {/* Render field types */}
                   {field.type === "text" && (
                     <input
                       type="text"
-                      className="w-full p-2 border rounded bg-gray-50 mt-1"
+                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter text"
                       required={field.required}
                       onChange={(e) => handleInputChange(field, e)}
@@ -133,7 +186,7 @@ export default function FormsList() {
                   {field.type === "number" && (
                     <input
                       type="number"
-                      className="w-full p-2 border rounded bg-gray-50 mt-1"
+                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter number"
                       required={field.required}
                       onChange={(e) => handleInputChange(field, e)}
@@ -141,12 +194,16 @@ export default function FormsList() {
                   )}
                   {field.type === "select" && (
                     <select
-                      className="w-full p-2 border rounded bg-gray-50 mt-1"
+                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required={field.required}
                       onChange={(e) => handleInputChange(field, e)}
+                      value={responses[field.id] || ""}
                     >
                       <option value="">-- Select --</option>
-                      {field.options.map((option, idx) => (
+                      {(field.parentField
+                        ? childOptions[field.id] || []
+                        : field.options || []
+                      ).map((option, idx) => (
                         <option key={idx} value={option}>
                           {option}
                         </option>
@@ -158,15 +215,16 @@ export default function FormsList() {
                       <input
                         type="checkbox"
                         className="mr-2"
+                        checked={responses[field.id] || false}
                         onChange={(e) => handleInputChange(field, e)}
                       />
-                      <span>Check if applicable</span>
+                      <span className="text-gray-700">Check if applicable</span>
                     </div>
                   )}
                   {field.type === "date" && (
                     <input
                       type="date"
-                      className="w-full p-2 border rounded bg-gray-50 mt-1"
+                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required={field.required}
                       onChange={(e) => handleInputChange(field, e)}
                     />
@@ -174,7 +232,7 @@ export default function FormsList() {
                   {field.type === "file" && (
                     <input
                       type="file"
-                      className="w-full p-2 border rounded bg-gray-50 mt-1"
+                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required={field.required}
                       onChange={(e) => handleInputChange(field, e)}
                     />
@@ -184,9 +242,9 @@ export default function FormsList() {
 
               <button
                 type="submit"
-                className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
+                className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 focus:ring-2 focus:ring-green-400 transition"
               >
-                Submit
+                ✅ Submit
               </button>
             </form>
           </div>
