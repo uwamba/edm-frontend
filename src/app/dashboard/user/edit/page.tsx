@@ -4,6 +4,14 @@ import { useEffect, useState, FormEvent } from "react";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    job_title?: string;
+    manager?: { id: number; name: string };
+    company?: { id: number; name: string };
+}
 export default function EditUser() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,7 +25,8 @@ export default function EditUser() {
     manager_id: "",
   });
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
