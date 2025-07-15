@@ -78,11 +78,29 @@ export default function Sidebar() {
                     : "text-gray-800 dark:text-gray-200"
                 }`}
               >
-                <span className="text-base"><FaList />,</span>
+                <span className="text-base"><FaList /></span>
                 <span>Submissions</span>
               </Link>
           </nav>
+
+          <nav className="flex flex-col gap-1 mt-2 ml-4">
+              <Link
+                key="Submissions"
+                href={`/dashboard/user/list`}
+                className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
+                  pathname === `dashboard/workflow/submission`
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-800 dark:text-gray-200"
+                }`}
+              >
+                <span className="text-base"><FaList /></span>
+                <span>Users</span>
+              </Link>
+          </nav>
+
+          
       </div>
+      
 
       {/* Language Switcher at Bottom */}
       <div className="mt-6 border-t pt-4">

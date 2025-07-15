@@ -2,6 +2,7 @@
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 interface Field {
   id: number;
@@ -13,25 +14,59 @@ interface Field {
   parentMapping?: Record<string, string[]>;
 }
 
+interface ApprovalStep {
+  id: number;
+  step_number: number;
+  approver: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  status: string;
+}
+
+interface ApprovalProcess {
+  id: number;
+  name: string;
+  description: string;
+  steps: ApprovalStep[];
+}
+
 interface Form {
   id: number;
   title: string;
   description: string;
   fields: Field[];
+  approval_process?: ApprovalProcess | null;
 }
 
 export default function FormsList() {
   const [forms, setForms] = useState<Form[]>([]);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [responses, setResponses] = useState<{ [fieldId: number]: any }>({});
-  const [childOptions, setChildOptions] = useState<{ [fieldId: number]: string[] }>({});
 
   useEffect(() => {
     const fetchForms = async () => {
       try {
         const response = await axios.get("http://localhost:8000/api/forms");
-        setForms(response.data.data);
+        const formsData: Form[] = response.data.data;
+
+        // Fetch approval processes for each form
+        const formsWithApproval = await Promise.all(
+          formsData.map(async (form) => {
+            try {
+              const approvalRes = await axios.get(`http://localhost:8000/api/forms/${form.id}/approval-process`);
+              return {
+                ...form,
+                approval_process: approvalRes.data, // Include approval process
+              };
+            } catch {
+              return { ...form, approval_process: null }; // No approval process
+            }
+          })
+        );
+
+        setForms(formsWithApproval);
       } catch (error) {
         console.error("Failed to fetch forms:", error);
       } finally {
@@ -42,93 +77,29 @@ export default function FormsList() {
     fetchForms();
   }, []);
 
-  const handleInputChange = (field: Field, e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    let value: any;
-
-    if (field.type === "checkbox") {
-      value = (e.target as HTMLInputElement).checked;
-    } else if (field.type === "file") {
-      const files = (e.target as HTMLInputElement).files;
-      value = files && files.length > 0 ? files[0] : null;
-    } else {
-      value = e.target.value;
-    }
-
-    setResponses((prev) => ({ ...prev, [field.id]: value }));
-
-    // Handle child fields for nested selects
-    selectedForm?.fields.forEach((f) => {
-      if (f.parentField === field.label && f.parentMapping) {
-        const key = String(value);
-        const mappedOptions = f.parentMapping[key] || [];
-        setChildOptions((prev) => ({
-          ...prev,
-          [f.id]: mappedOptions,
-        }));
-        setResponses((prev) => ({
-          ...prev,
-          [f.id]: "",
-        }));
-      }
-    });
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!selectedForm) return;
-
-    // Use FormData to support file uploads
-    const formData = new FormData();
-    formData.append("form_id", String(selectedForm.id));
-
-    // Append each field with key 'field_<id>'
-    Object.entries(responses).forEach(([fieldId, value]) => {
-      const key = `field_${fieldId}`;
-      if (value instanceof File) {
-        formData.append(`data[${key}]`, value);
-      } else {
-        formData.append(`data[${key}]`, value ?? "");
-      }
-    });
-
+  const handleDelete = async (formId: number) => {
+    if (!confirm("Are you sure you want to delete this form?")) return;
     try {
-      await axios.post(
-        `http://localhost:8000/api/form/submissions`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-
-      alert("✅ Form submitted successfully!");
-      setSelectedForm(null);
-      setResponses({});
-      setChildOptions({});
-    } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 422) {
-        console.error("Validation Errors:", error.response.data.errors);
-        alert("❌ Validation failed: " + JSON.stringify(error.response.data.errors));
-      } else {
-        console.error("Error submitting form:", error);
-        alert("❌ Failed to submit form.");
-      }
+      await axios.delete(`http://localhost:8000/api/forms/${formId}`);
+      setForms(forms.filter((f) => f.id !== formId));
+      alert("🗑️ Form deleted successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to delete form.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen text-gray-600">
+      <div className="flex justify-center items-center h-screen text-blue-600">
         Loading forms...
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+    <div className="min-h-screen bg-blue-50 p-6">
+      <h1 className="text-4xl font-bold text-center mb-8 text-blue-800">
         📋 All Forms
       </h1>
 
@@ -136,120 +107,53 @@ export default function FormsList() {
         {forms.map((form) => (
           <div
             key={form.id}
-            className="p-4 bg-white shadow rounded-lg hover:shadow-lg transition cursor-pointer border border-gray-200"
-            onClick={() => {
-              setSelectedForm(form);
-              setResponses({});
-              setChildOptions({});
-            }}
+            className="p-4 bg-blue-100 border border-blue-300 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
           >
-            <h2 className="text-xl font-semibold text-gray-800">{form.title}</h2>
-            <p className="text-gray-500 mt-1">
-              {form.description?.slice(0, 100) || "No description"}
-            </p>
-            <p className="text-sm text-gray-400 mt-2">{form.fields.length} fields</p>
+            <h2 className="text-xl font-semibold text-blue-800">{form.title}</h2>
+            <p className="text-blue-700 mt-1">{form.description || "No description"}</p>
+            <p className="text-sm text-blue-600 mt-2">{form.fields.length} fields</p>
+
+            {form.approval_process ? (
+              <div className="mt-3 p-3 bg-green-50 border border-green-300 rounded">
+                <h3 className="text-green-700 font-medium">✅ Approval Process</h3>
+                <p className="text-green-600">{form.approval_process.name}</p>
+                <ul className="list-disc list-inside text-green-700 mt-2">
+                  {form.approval_process.steps.map((step) => (
+                    <li key={step.id}>
+                      Step {step.step_number}: {step.approver.name} ({step.approver.email})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <Link
+                href={{
+                  pathname: "/dashboard/workflow/form/approval",
+                  query: { formId: form.id },
+                }}
+                className="mt-3 inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+              >
+                + Add Approval Process
+              </Link>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href={`/forms/edit/${form.id}`}
+                className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={() => handleDelete(form.id)}
+                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
-
-      {/* Fill Form Modal */}
-      {selectedForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-red-600 text-2xl"
-              onClick={() => setSelectedForm(null)}
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedForm.title}</h2>
-            <p className="text-gray-600 mb-4">{selectedForm.description}</p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {selectedForm.fields.map((field) => (
-                <div key={field.id}>
-                  <label className="block font-medium text-gray-700 mb-1">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-
-                  {/* Render field types */}
-                  {field.type === "text" && (
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter text"
-                      required={field.required}
-                      onChange={(e) => handleInputChange(field, e)}
-                    />
-                  )}
-                  {field.type === "number" && (
-                    <input
-                      type="number"
-                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter number"
-                      required={field.required}
-                      onChange={(e) => handleInputChange(field, e)}
-                    />
-                  )}
-                  {field.type === "select" && (
-                    <select
-                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required={field.required}
-                      onChange={(e) => handleInputChange(field, e)}
-                      value={responses[field.id] || ""}
-                    >
-                      <option value="">-- Select --</option>
-                      {(field.parentField
-                        ? childOptions[field.id] || []
-                        : field.options || []
-                      ).map((option, idx) => (
-                        <option key={idx} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {field.type === "checkbox" && (
-                    <div className="flex items-center mt-1">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={responses[field.id] || false}
-                        onChange={(e) => handleInputChange(field, e)}
-                      />
-                      <span className="text-gray-700">Check if applicable</span>
-                    </div>
-                  )}
-                  {field.type === "date" && (
-                    <input
-                      type="date"
-                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required={field.required}
-                      onChange={(e) => handleInputChange(field, e)}
-                    />
-                  )}
-                  {field.type === "file" && (
-                    <input
-                      type="file"
-                      className="w-full p-2 border rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required={field.required}
-                      onChange={(e) => handleInputChange(field, e)}
-                    />
-                  )}
-                </div>
-              ))}
-
-              <button
-                type="submit"
-                className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 focus:ring-2 focus:ring-green-400 transition"
-              >
-                ✅ Submit
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
