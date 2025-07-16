@@ -4,7 +4,14 @@ import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
 
-type FieldType = "text" | "number" | "select" | "checkbox" | "radio" | "date" | "file";
+type FieldType =
+  | "text"
+  | "number"
+  | "select"
+  | "checkbox"
+  | "radio"
+  | "date"
+  | "file";
 
 interface ValidationRule {
   type: "min" | "max" | "regex" | "textLength";
@@ -13,19 +20,22 @@ interface ValidationRule {
 }
 
 interface Condition {
-  field: string; // label of another field
+  field: string;
   operator: "equals" | "not equals" | "greater than" | "less than";
   value: string | number;
   action: "show" | "hide";
 }
 
 interface Field {
+  id: number;
   label: string;
   type: FieldType;
   options?: string[];
   required: boolean;
   validations?: ValidationRule[];
   conditions?: Condition[];
+  parentField?: string;
+  parentMapping?: Record<string, string[]>;
 }
 
 interface FormSchema {
@@ -37,39 +47,55 @@ interface FormSchema {
 
 export default function SingleFormPage() {
   const searchParams = useSearchParams();
-  const id = searchParams.get("id");
-
+  const [id, setId] = useState<string | null>(null);
   const [form, setForm] = useState<FormSchema | null>(null);
   const [values, setValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      axios.get(`http://localhost:8000/api/forms/${id}`).then((res) => {
-        setForm(res.data);
-      });
+    const paramId = searchParams.get("id");
+    if (paramId) {
+      setId(paramId);
+      axios
+        .get(`http://localhost:8000/api/forms/${paramId}`)
+        .then((res) => {
+          const formData = res.data?.data || res.data;
+          if (formData?.fields) {
+            setForm(formData);
+          } else {
+            console.error("Form data missing fields property", formData);
+            setForm(null);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load form:", err);
+          setForm(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-  }, [id]);
+  }, [searchParams]);
 
   const handleChange = (
     label: string,
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { type, value, checked, files } = e.target as HTMLInputElement;
-    setValues({
-      ...values,
+    setValues((prev) => ({
+      ...prev,
       [label]:
         type === "checkbox"
           ? checked
           : type === "file"
           ? files?.[0]
           : value,
-    });
+    }));
   };
 
   const evaluateConditions = (field: Field): boolean => {
     if (!field.conditions) return true;
-
     return field.conditions.every((cond) => {
       const targetValue = values[cond.field];
       switch (cond.operator) {
@@ -122,23 +148,41 @@ export default function SingleFormPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
     const newErrors: Record<string, string> = {};
-    form?.fields.forEach((field) => {
+
+    form?.fields?.forEach((field) => {
       if (evaluateConditions(field)) {
         const error = validateField(field, values[field.label]);
         if (error) newErrors[field.label] = error;
       }
     });
+
     setErrors(newErrors);
+
     if (Object.keys(newErrors).length === 0) {
       const formData = new FormData();
-      for (const key in values) {
-        formData.append(key, values[key]);
-      }
+
+      form?.fields?.forEach((field) => {
+        const key = `data[field_${field.id}]`;
+        const value = values[field.label];
+
+        if (field.type === "file" && value instanceof File) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, value ?? "");
+        }
+      });
+
       try {
         await axios.post(
-          `http://localhost:8000/api/forms/${id}/submit`,
-          formData
+          `http://localhost:8000/api/form/${form?.id}/submissions`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
         alert("🎉 Form submitted successfully!");
       } catch (err) {
@@ -148,43 +192,58 @@ export default function SingleFormPage() {
     }
   };
 
-  if (!id) return <p>No form ID provided in URL.</p>;
-  if (!form) return <p>Loading form...</p>;
+  if (loading) return <p className="text-gray-800">Loading...</p>;
+  if (!form) return <p className="text-red-600">Form not found or failed to load.</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">{form.title}</h1>
-      <p className="mb-6">{form.description}</p>
+    <div className="max-w-2xl mx-auto p-6 bg-white text-gray-800 rounded-lg shadow-md">
+      <h1 className="text-3xl font-bold mb-4 text-blue-700">{form.title}</h1>
+      <p className="mb-6 text-gray-600">{form.description}</p>
       <form onSubmit={handleSubmit} className="space-y-4">
         {form.fields.map(
           (field) =>
             evaluateConditions(field) && (
               <div key={field.label}>
-                <label className="block font-medium mb-1">
+                <label className="block font-medium mb-1 text-gray-700">
                   {field.label}
-                  {field.required && <span className="text-red-500">*</span>}
+                  {field.required && <span className="text-red-600">*</span>}
                 </label>
-                {field.type === "text" && (
-                  <input
-                    type="text"
-                    value={values[field.label] || ""}
-                    onChange={(e) => handleChange(field.label, e)}
-                    className="w-full border rounded p-2"
-                  />
-                )}
-                {field.type === "number" && (
-                  <input
-                    type="number"
-                    value={values[field.label] || ""}
-                    onChange={(e) => handleChange(field.label, e)}
-                    className="w-full border rounded p-2"
-                  />
-                )}
-                {field.type === "select" && (
+
+                {field.parentField && field.parentMapping ? (
+                  <>
+                    <select
+                      value={values[field.parentField] || ""}
+                      onChange={(e) => handleChange(field.parentField!, e)}
+                      className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
+                    >
+                      <option value="">Select {field.parentField}...</option>
+                      {Object.keys(field.parentMapping).map((parent) => (
+                        <option key={parent} value={parent}>
+                          {parent}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={values[field.label] || ""}
+                      onChange={(e) => handleChange(field.label, e)}
+                      className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
+                    >
+                      <option value="">Select {field.label}...</option>
+                      {(field.parentMapping[values[field.parentField]] || []).map(
+                        (child) => (
+                          <option key={child} value={child}>
+                            {child}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </>
+                ) : field.type === "select" ? (
                   <select
                     value={values[field.label] || ""}
                     onChange={(e) => handleChange(field.label, e)}
-                    className="w-full border rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
                   >
                     <option value="">Select...</option>
                     {field.options?.map((opt) => (
@@ -193,42 +252,42 @@ export default function SingleFormPage() {
                       </option>
                     ))}
                   </select>
-                )}
-                {field.type === "radio" &&
-                  field.options?.map((opt) => (
-                    <div key={opt}>
-                      <input
-                        type="radio"
-                        name={field.label}
-                        value={opt}
-                        checked={values[field.label] === opt}
-                        onChange={(e) => handleChange(field.label, e)}
-                      />
-                      <span>{opt}</span>
-                    </div>
-                  ))}
-                {field.type === "checkbox" && (
+                ) : field.type === "text" ? (
                   <input
-                    type="checkbox"
-                    checked={values[field.label] || false}
+                    type="text"
+                    value={values[field.label] || ""}
                     onChange={(e) => handleChange(field.label, e)}
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
                   />
-                )}
-                {field.type === "date" && (
+                ) : field.type === "number" ? (
+                  <input
+                    type="number"
+                    value={values[field.label] || ""}
+                    onChange={(e) => handleChange(field.label, e)}
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
+                  />
+                ) : field.type === "date" ? (
                   <input
                     type="date"
                     value={values[field.label] || ""}
                     onChange={(e) => handleChange(field.label, e)}
-                    className="w-full border rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
                   />
-                )}
-                {field.type === "file" && (
+                ) : field.type === "checkbox" ? (
+                  <input
+                    type="checkbox"
+                    checked={values[field.label] || false}
+                    onChange={(e) => handleChange(field.label, e)}
+                    className="mr-2"
+                  />
+                ) : field.type === "file" ? (
                   <input
                     type="file"
                     onChange={(e) => handleChange(field.label, e)}
-                    className="w-full border rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-800"
                   />
-                )}
+                ) : null}
+
                 {errors[field.label] && (
                   <p className="text-red-600">{errors[field.label]}</p>
                 )}
@@ -237,7 +296,7 @@ export default function SingleFormPage() {
         )}
         <button
           type="submit"
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Submit
         </button>

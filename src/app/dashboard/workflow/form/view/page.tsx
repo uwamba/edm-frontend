@@ -136,6 +136,17 @@ export default function FormsList() {
                 + Add Approval Process
               </Link>
             )}
+            <div className="mt-4 flex flex-wrap gap-2">
+             <Link
+                href={{
+                  pathname: "/dashboard/workflow/form/single",
+                  query: { id: form.id },
+                }}
+                className="mt-3 inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+              >
+                Submit Form
+              </Link>
+              </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
