@@ -91,6 +91,22 @@
     "offices": {
      "office": "Office"
     },
+    "workflow": {
+      "workflow": "Workflow"
+    },
+    "users": {
+      "user_management": "User Management",
+      "add_user": "Add User",
+      "edit_user": "Edit User",
+      "delete_user": "Delete User",
+      "view_users": "View Users"
+    },
+    "logout": {
+      "logout_button": "Logout",
+      "logout_confirmation": "Are you sure you want to log out?",
+      "logout_success": "You have been logged out successfully.",
+      "logout_error": "An error occurred while logging out. Please try again."
+    },
     "forms": {
       "create_new_form": "Create New Form",
       "view_forms": "View Forms",
@@ -108,6 +124,16 @@
         "form_success_message": "Form submitted successfully!",
         "form_error_message": "Error submitting form. Please try again."
       }
+    },
+
+    "documents": {
+      "upload_document": "Upload Document",
+      "view_documents": "View Documents",
+      "document_name": "Document Name",
+      "document_description": "Document Description",
+      "submit_document": "Submit Document",
+      "document_success_message": "Document uploaded successfully!",
+      "document_error_message": "Error uploading document. Please try again."
     }
 
   }

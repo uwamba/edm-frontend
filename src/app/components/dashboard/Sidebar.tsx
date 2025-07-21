@@ -19,31 +19,54 @@ import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 export default function Sidebar() {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const [openOffice, setOpenOffice] = useState(true);
+  const [openWorkflow, setOpenWorkflow] = useState(true);
   const [openDocument, setOpenDocument] = useState(true);
+  const [openUsers, setOpenUsers] = useState(true);
 
-  const officeItems = [
+
+  const WorkFlowItems = [
     {
-      slug: "new",
-      name: t("edms.form.new_document", "New Form"),
+      slug: "/dashboard/workflow/form/new",
+      name: t("edms.forms.create_new_form", "Create New Form"),
       icon: <FaWpforms />,
     },
     {
-      slug: "view",
-      name: t("edms.form.view_documents", "View Forms"),
+      slug: "/dashboard/workflow/form/view",
+      name: t("edms.forms.view_forms", "View Forms"),
       icon: <FaList />,
     },
+    {
+      slug: "/dashboard/workflow/submissions",
+      name: t("edms.forms.submit_form", "Form Submissions"),
+      icon: <FaList />,
+    },
+  ];
+
+  const UserItems = [
+    {
+      slug: "/dashboard/user/create",
+      name: t("edms.users.add_user", "Create User"),
+      icon: <FaUsers />,
+    },
+    {
+      slug: "/dashboard/user/list",
+      name: t("edms.users.view_users", "View Users"),
+      icon: <FaUsers />,
+    },
+  
+    
+
   ];
 
   const documentItems = [
     {
       slug: "upload",
-      name: "Upload Document",
+      name: t("edms.documents.upload_document", "Upload Document"),
       icon: <FaUpload />,
     },
     {
       slug: "view",
-      name: "View Documents",
+      name: t("edms.documents.view_documents", "View Documents"),
       icon: <FaFileAlt />,
     },
   ];
@@ -51,24 +74,61 @@ export default function Sidebar() {
   return (
     <aside className="w-72 bg-white dark:bg-gray-800 h-screen p-4 border-r dark:border-gray-700 overflow-y-auto flex flex-col justify-between">
       <div>
-        {/* Office Section */}
+        {/* User Section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            {t("edms.users.users", "Users")}
+          </h2>
+          <button
+            className="w-full flex items-center justify-between px-4 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            onClick={() => setOpenUsers(!openUsers)}
+          >
+            <span className="flex items-center gap-2">
+              <FaUsers />
+              {t("edms.users.users", "Users")}
+            </span>
+            {openUsers ? <FaChevronDown /> : <FaChevronRight />}
+          </button> 
+          {openUsers && (
+            <nav className="flex flex-col gap-1 mt-2 ml-4">
+              {UserItems.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={item.slug}
+                  className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
+                    pathname === item.slug
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </nav>
+          )}
+        </div>  
+        
+        {/* workflow Section */}
         <button
           className="w-full flex items-center justify-between px-4 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-          onClick={() => setOpenOffice(!openOffice)}
+          onClick={() => setOpenWorkflow(!openWorkflow)}
         >
           <span className="flex items-center gap-2">
             <FaBuilding />
-            {t("edms.offices.office", "Office")}
+            {t("edms.workflow.workflow", "WorkFlow")}
           </span>
-          {openOffice ? <FaChevronDown /> : <FaChevronRight />}
+          {openWorkflow ? <FaChevronDown /> : <FaChevronRight />}
         </button>
 
-        {openOffice && (
+      
+
+        {openWorkflow && (
           <nav className="flex flex-col gap-1 mt-2 ml-4">
-            {officeItems.map((item) => (
+            {WorkFlowItems.map((item) => (
               <Link
                 key={item.slug}
-                href={`/dashboard/workflow/form/${item.slug}`}
+                href={`${item.slug}`}
                 className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
                   pathname === `/dashboard/workflow/form/${item.slug}`
                     ? "bg-blue-500 text-white"
@@ -112,42 +172,6 @@ export default function Sidebar() {
             ))}
           </nav>
         )}
-
-        
-
-        {/* Submissions Link */}
-        <nav className="flex flex-col gap-1 mt-2 ml-4">
-          <Link
-            href={`/dashboard/workflow/submissions`}
-            className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
-              pathname === `/dashboard/workflow/submissions`
-                ? "bg-blue-500 text-white"
-                : "text-gray-800 dark:text-gray-200"
-            }`}
-          >
-            <span className="text-base">
-              <FaList />
-            </span>
-            <span>Submissions</span>
-          </Link>
-        </nav>
-
-        {/* Users Link */}
-        <nav className="flex flex-col gap-1 mt-2 ml-4">
-          <Link
-            href={`/dashboard/user/list`}
-            className={`text-sm flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
-              pathname === `/dashboard/user/list`
-                ? "bg-blue-500 text-white"
-                : "text-gray-800 dark:text-gray-200"
-            }`}
-          >
-            <span className="text-base">
-              <FaUsers />
-            </span>
-            <span>Users</span>
-          </Link>
-        </nav>
       </div>
 
       {/* Language Switcher */}

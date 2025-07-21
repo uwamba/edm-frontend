@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import axiosInstance from "@/app/lib/api";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 interface User {
     id: number;
@@ -17,14 +19,20 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
 
 
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get("http://localhost:8000/api/users")
-            .then(res => setUsers(res.data))
-            .catch(err => console.error(err))
-            .finally(() => setLoading(false));
-    }, []);
+        const fetchProfile = async () => {
+          try {
+            const response = await axiosInstance.get('/users');
+            setUsers(response.data); // Set profile data in state
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
+        };
+    
+        fetchProfile();
+      }, []);
+
 
     const handleDelete = async (id: number) => {
         if (confirm("Are you sure to delete this user?")) {
@@ -33,9 +41,10 @@ export default function UsersPage() {
         }
     };
 
-    if (loading) return <p>Loading users...</p>;
+
 
     return (
+    <DashboardLayout>
         <div className="p-6">
             <h1 className="text-3xl font-bold mb-4">👥 User Management</h1>
 
@@ -94,5 +103,7 @@ export default function UsersPage() {
                 </tbody>
             </table>
         </div>
+    </DashboardLayout>
     );
+    
 }

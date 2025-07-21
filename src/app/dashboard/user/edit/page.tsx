@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 interface User {
     id: number;
@@ -71,6 +73,7 @@ export default function EditUser() {
   if (loading) return <p>Loading...</p>;
 
   return (
+    <DashboardLayout>
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">✏️ Edit User</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,5 +131,6 @@ export default function EditUser() {
         </button>
       </form>
     </div>
+    </DashboardLayout>
   );
 }

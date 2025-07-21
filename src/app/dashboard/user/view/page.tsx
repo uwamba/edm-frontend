@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 export default function ViewUser() {
   const searchParams = useSearchParams();
@@ -23,6 +25,7 @@ export default function ViewUser() {
   if (!user) return <p>User not found</p>;
 
   return (
+    <DashboardLayout>
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">👤 User Details</h1>
       <p><strong>Name:</strong> {user.name}</p>
@@ -31,5 +34,7 @@ export default function ViewUser() {
       <p><strong>Company:</strong> {user.company?.name}</p>
       <p><strong>Manager:</strong> {user.manager?.name}</p>
     </div>
+    </DashboardLayout>
   );
+
 }

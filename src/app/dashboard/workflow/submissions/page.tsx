@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import SubmissionDetails from "@/app/components/dashboard/SubmissionDetails";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 
 
@@ -10,6 +11,7 @@ interface Submission {
   id: number;
   form_id: number;
   user_id: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -46,6 +48,7 @@ export default function SubmissionsList() {
   }
 
   return (
+    <DashboardLayout>
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">📋 Submitted Forms</h1>
       <div className="space-y-4">
@@ -77,5 +80,6 @@ export default function SubmissionsList() {
         ))}
       </div>
     </div>
+    </DashboardLayout>
   );
 }

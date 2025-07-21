@@ -10,31 +10,46 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isValidEmail, setIsValidEmail] = useState(true);
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateEmail(email)) {
+      setIsValidEmail(false);
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8000/api/token-login", {
-        email,
-        password,
-      }, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true, // IMPORTANT for Sanctum
-      });
+      const response = await axios.post(
+        "http://localhost:8000/api/token-login",
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // IMPORTANT for Sanctum
+        }
+      );
 
-      // Save token and user info to localStorage
+      // Save token and user info securely, maybe in an HttpOnly cookie or Redux store
+      // If using HttpOnly cookies, the backend should set this cookie.
+      // If using localStorage for now (not secure in real apps), you can save it like this:
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
       // Redirect to dashboard
       router.push("/dashboard");
-    } catch (err: any) {
-      if (err.response?.data?.errors) {
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.errors) {
         setError(err.response.data.errors.email?.[0] || "Login failed");
       } else {
         setError("Login failed. Check your credentials.");
@@ -51,6 +66,11 @@ export default function LoginPage() {
 
         {error && (
           <div className="mb-4 text-red-600 text-center">{error}</div>
+        )}
+
+        {/* Email Validation Error */}
+        {!isValidEmail && (
+          <div className="mb-4 text-red-600 text-center">Please enter a valid email address.</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">

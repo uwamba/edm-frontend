@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 export default function DocumentUploadForm() {
   const [name, setName] = useState('');
@@ -75,6 +78,8 @@ export default function DocumentUploadForm() {
   };
 
   return (
+    <DashboardLayout>
+     
     <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow text-black">
       <h1 className="text-xl font-bold mb-4">Upload Document</h1>
 
@@ -159,5 +164,6 @@ export default function DocumentUploadForm() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
-
+import DashboardLayout from "@/app/components/DashboardLayout";
 type FieldType =
   | "text"
   | "number"
@@ -47,8 +47,10 @@ interface FormSchema {
 
 export default function SingleFormPage() {
   const searchParams = useSearchParams();
+  // eslint-disable-next-line 
   const [id, setId] = useState<string | null>(null);
   const [form, setForm] = useState<FormSchema | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [values, setValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function SingleFormPage() {
       }
     });
   };
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const validateField = (field: Field, value: any): string | null => {
     if (field.required && (value === undefined || value === "")) {
       return "This field is required.";
@@ -196,6 +198,7 @@ export default function SingleFormPage() {
   if (!form) return <p className="text-red-600">Form not found or failed to load.</p>;
 
   return (
+    <DashboardLayout>
     <div className="max-w-2xl mx-auto p-6 bg-white text-gray-800 rounded-lg shadow-md">
       <h1 className="text-3xl font-bold mb-4 text-blue-700">{form.title}</h1>
       <p className="mb-6 text-gray-600">{form.description}</p>
@@ -302,5 +305,7 @@ export default function SingleFormPage() {
         </button>
       </form>
     </div>
+    </DashboardLayout>
+    
   );
 }

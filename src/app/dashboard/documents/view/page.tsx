@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
-
+import DashboardLayout from "@/app/components/DashboardLayout";
 interface Document {
   id: number;
   name: string;
@@ -47,6 +48,7 @@ export default function DocumentsByYear({ year }: Props) {
   }, [year]);
 
   return (
+    <DashboardLayout>
     <div className="max-w-5xl mx-auto p-6 bg-white text-black rounded shadow">
       <h1 className="text-2xl font-bold mb-4">Documents in folder: {year}</h1>
 
@@ -93,5 +95,6 @@ export default function DocumentsByYear({ year }: Props) {
         </table>
       )}
     </div>
+    </DashboardLayout>
   );
 }

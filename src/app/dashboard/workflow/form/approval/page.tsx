@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 interface User {
   id: number;
@@ -75,11 +76,11 @@ export default function ApprovalProcessPage() {
 
       console.log("Submitting payload:", payload);
 
-      const response = await axios.post("http://localhost:8000/api/approval-processes", payload);
+      await axios.post("http://localhost:8000/api/approval-processes", payload);
 
       alert("✅ Approval Process created successfully!");
       router.push("/dashboard/workflow/form/view");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating approval process:", error);
       if (axios.isAxiosError(error) && error.response?.status === 422) {
         alert("❌ Validation failed: " + JSON.stringify(error.response.data.errors));
@@ -98,6 +99,8 @@ export default function ApprovalProcessPage() {
   }
 
   return (
+    <DashboardLayout>
+      
     <div className="min-h-screen bg-blue-50 p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold text-blue-800 mb-4">
         📝 Create Approval Process
@@ -183,5 +186,6 @@ export default function ApprovalProcessPage() {
         </button>
       </form>
     </div>
+    </DashboardLayout>
   );
 }

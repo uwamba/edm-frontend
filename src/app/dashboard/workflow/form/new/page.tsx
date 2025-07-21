@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 type FieldType = "text" | "number" | "select" | "checkbox" | "radio" | "date" | "file";
 
@@ -148,6 +149,7 @@ export default function CreateForm() {
   };
 
   return (
+    <DashboardLayout>
     <div className="max-w-6xl mx-auto p-8 bg-white rounded-lg shadow-md">
       <h1 className="text-3xl font-bold mb-6 text-gray-800 text-center">📋 Advanced Form Builder</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -324,6 +326,7 @@ export default function CreateForm() {
         </div>
       </form>
     </div>
+    </DashboardLayout>
   );
 }
 

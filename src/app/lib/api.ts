@@ -1,17 +1,26 @@
-// lib/api.ts
-import axios from "axios";
+// utils/axiosInstance.ts
 
-const api = axios.create({
-  baseURL: "http://localhost:8000/api", // Your Laravel API base URL
-  withCredentials: true, // IMPORTANT for Sanctum
+import axios from 'axios';
+
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:8000/api', // Your Laravel API URL (adjust if necessary)
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-api.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add a request interceptor to attach the token to the headers
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token'); // Get the token from localStorage
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`; // Attach token to every request
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-export default api;
+export default axiosInstance;

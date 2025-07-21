@@ -72,6 +72,22 @@
     "offices": {
       "office": "Bureau"
     },
+    "workflow": {
+      "workflow": "Flux de travail"
+    },
+    "users": {
+      "user_management": "Gestion des utilisateurs",
+      "add_user": "Ajouter un utilisateur",
+      "edit_user": "Modifier un utilisateur",
+      "delete_user": "Supprimer un utilisateur",
+      "view_users": "Voir les utilisateurs"
+    },
+    "logout": {
+      "logout_button": "Déconnexion",
+      "logout_confirmation": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "logout_success": "Vous avez été déconnecté avec succès.",
+      "logout_error": "Une erreur s'est produite lors de la déconnexion. Veuillez réessayer."
+    },
     "menu": {
       "home": "Accueil",
       "support": "Assistance",
@@ -94,6 +110,15 @@
         "form_success_message": "Formulaire soumis avec succès !",
         "form_error_message": "Erreur lors de la soumission du formulaire. Veuillez réessayer."
       }
+    },
+    "documents": {
+      "upload_document": "Télécharger un document",
+      "view_documents": "Voir les documents",
+      "document_name": "Nom du document",
+      "document_description": "Description du document",
+      "submit_document": "Soumettre le document",
+      "document_success_message": "Document téléchargé avec succès !",
+      "document_error_message": "Erreur lors du téléchargement du document. Veuillez réessayer."
     }
   }
 }

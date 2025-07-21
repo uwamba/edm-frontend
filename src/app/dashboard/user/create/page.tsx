@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 interface Company {
   id: number;
@@ -58,6 +59,7 @@ export default function CreateUser() {
       await axios.post("http://localhost:8000/api/users", form);
       alert("✅ User created successfully!");
       router.push("/dashboard/user/list");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.data?.errors) {
         alert("❌ Validation errors:\n" + JSON.stringify(error.response.data.errors));
@@ -73,6 +75,7 @@ export default function CreateUser() {
   if (loading) return <p className="p-6 text-blue-700">Loading...</p>;
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-blue-50 p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold text-blue-800 mb-6">➕ Create New User</h1>
 
@@ -153,5 +156,6 @@ export default function CreateUser() {
         </button>
       </form>
     </div>
+    </DashboardLayout>
   );
 }

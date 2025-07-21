@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import Link from "next/link";
+import DashboardLayout from "@/app/components/DashboardLayout";
 
 interface Field {
   id: number;
@@ -98,6 +100,7 @@ export default function FormsList() {
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-blue-50 p-6">
       <h1 className="text-4xl font-bold text-center mb-8 text-blue-800">
         📋 All Forms
@@ -166,5 +169,6 @@ export default function FormsList() {
         ))}
       </div>
     </div>
+    </DashboardLayout>
   );
 }
