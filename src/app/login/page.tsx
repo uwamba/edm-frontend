@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -36,17 +36,17 @@ export default function LoginPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: true, // IMPORTANT for Sanctum
+          withCredentials: true, // For Sanctum
         }
       );
 
-      // Save token and user info securely, maybe in an HttpOnly cookie or Redux store
-      // If using HttpOnly cookies, the backend should set this cookie.
-      // If using localStorage for now (not secure in real apps), you can save it like this:
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      // ✅ Save token only in browser
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
 
-      // Redirect to dashboard
+      // Redirect after login
       router.push("/dashboard");
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.errors) {
@@ -64,13 +64,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Login</h1>
 
-        {error && (
-          <div className="mb-4 text-red-600 text-center">{error}</div>
-        )}
-
-        {/* Email Validation Error */}
+        {error && <div className="mb-4 text-red-600 text-center">{error}</div>}
         {!isValidEmail && (
-          <div className="mb-4 text-red-600 text-center">Please enter a valid email address.</div>
+          <div className="mb-4 text-red-600 text-center">
+            Please enter a valid email address.
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
