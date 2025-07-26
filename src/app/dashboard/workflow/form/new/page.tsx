@@ -1,409 +1,392 @@
-"use client";
+'use client';
+import { useEffect } from 'react';
+import { useState, FormEvent } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
-import { useState, ChangeEvent, FormEvent } from "react";
-import axios from "axios";
-import DashboardLayout from "@/app/components/DashboardLayout";
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'date_now'
+  | 'select'
+  | 'checkbox'
+  | 'radio'
+  | 'file'
+  | 'multiselect';
 
-type FieldType = "text" | "number" | "select" | "checkbox" | "radio" | "date" | "file";
-
-interface ValidationRule {
-  type: "min" | "max" | "regex" | "textLength" | "fileSize" | "fileType";
-  value: string | number;
-  message: string;
-}
-
-interface Condition {
-  field: string;
-  operator: "equals" | "not equals" | "greater than" | "less than";
-  value: string | number;
-  action: "show" | "hide";
-}
-
-interface FieldInput {
-  id: number;
+interface Field {
   label: string;
   type: FieldType;
-  options?: string[];
   required: boolean;
-  validations: ValidationRule[];
-  conditions: Condition[];
-  parentField?: string;
-  parentMapping?: Record<string, string[]>;
-  parent_field_id?: number;
+  options?: string[];
+  validations?: any[];
+  conditions?: any[];
+  parentMapping?: any[];
+  parent_temp_id?: string | null;
+  temp_id: string;
+  default?: any;
+  nestedOptions?: { [key: string]: string[] };
 }
 
-interface FormData {
-  title: string;
-  description: string;
-  fields: FieldInput[];
-}
+export default function CreateFormPage() {
+  const [formTitle, setFormTitle] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+  const [fields, setFields] = useState<Field[]>([]);
 
-let fieldCounter = 1;
-
-export default function CreateForm() {
-  const [form, setForm] = useState<Omit<FormData, "fields">>({
-    title: "",
-    description: "",
-  });
-  const [fields, setFields] = useState<FieldInput[]>([]);
-
-  const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
-
-  const handleFieldChange = (
-    id: number,
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    setFields((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, [name]: type === "checkbox" ? checked : value } : f
-      )
-    );
-  };
-
-  const addField = (parentId?: number) => {
-    const newField: FieldInput = {
-      id: fieldCounter++,
-      label: "",
-      type: "text",
-      options: [],
+  const addField = (parentTempId: string | null = null) => {
+    const newField: Field = {
+      label: '',
+      type: 'text',
       required: false,
+      options: [],
       validations: [],
       conditions: [],
-      parentField: "",
-      parentMapping: {},
-      parent_field_id: parentId,
+      parentMapping: [],
+      parent_temp_id: parentTempId,
+      temp_id: uuidv4(),
+      nestedOptions: {},
     };
-    setFields([...fields, newField]);
+    setFields((prev) => [...prev, newField]);
   };
 
-  const removeField = (id: number) => {
-    setFields((prev) => prev.filter((f) => f.id !== id && f.parent_field_id !== id));
-  };
 
-  const addOption = (id: number) => {
-    setFields((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, options: [...(f.options || []), ""] } : f
-      )
-    );
-  };
 
-  const removeOption = (fieldId: number, optIdx: number) => {
-    setFields((prev) =>
-      prev.map((f) => {
-        if (f.id === fieldId && f.options) {
-          const updatedOptions = [...f.options];
-          updatedOptions.splice(optIdx, 1);
-          return { ...f, options: updatedOptions };
+
+  const updateField = (index: number, key: keyof Field, value: any) => {
+    setFields((prevFields) => {
+      const updatedFields = [...prevFields];
+      const updatedField = { ...updatedFields[index], [key]: value };
+
+      // Reset options if type changes
+      if (key === "type") {
+        updatedField.options = [];
+        updatedField.nestedOptions = {};
+        updatedField.default = value === "date_now" ? new Date().toISOString().split("T")[0] : "";
+      }
+
+      updatedFields[index] = updatedField;
+
+      // If the field being updated is a parent and default changed
+      if (key === "default") {
+        const parentTempId = updatedField.temp_id;
+        const selectedValue = value;
+
+        updatedFields.forEach((child, i) => {
+          if (child.parent_temp_id === parentTempId) {
+            const childOptions = child.nestedOptions?.[selectedValue] || [];
+            updatedFields[i] = {
+              ...child,
+              options: childOptions,
+            };
+          }
+        });
+      }
+
+      return updatedFields;
+    });
+  };
+  useEffect(() => {
+    setFields((prevFields) => {
+      const updatedFields = [...prevFields];
+      prevFields.forEach((field, index) => {
+        if (field.parent_temp_id) {
+          const parent = prevFields.find(f => f.temp_id === field.parent_temp_id);
+          if (parent) {
+            const parentValue = parent.default;
+            const newOptions = field.nestedOptions?.[parentValue] || [];
+            updatedFields[index] = {
+              ...field,
+              options: newOptions,
+            };
+          }
         }
-        return f;
-      })
-    );
-  };
-
-  const addParentMappingEntry = (fieldId: number, parent: string) => {
-    setFields((prev) =>
-      prev.map((f) =>
-        f.id === fieldId ? {
-          ...f,
-          parentMapping: {
-            ...f.parentMapping,
-            [parent]: [],
-          },
-        } : f
-      )
-    );
-  };
-
-  const addChildToParent = (fieldId: number, parent: string, child: string) => {
-    if (!child.trim()) return;
-    setFields((prev) =>
-      prev.map((f) =>
-        f.id === fieldId && f.parentMapping && f.parentMapping[parent]
-          ? {
-              ...f,
-              parentMapping: {
-                ...f.parentMapping,
-                [parent]: [...f.parentMapping[parent], child.trim()],
-              },
-            }
-          : f
-      )
-    );
-  };
-
-  const removeChildFromParent = (fieldId: number, parent: string, childIdx: number) => {
-    setFields((prev) =>
-      prev.map((f) => {
-        if (f.id === fieldId && f.parentMapping && f.parentMapping[parent]) {
-          const updatedChildren = [...f.parentMapping[parent]];
-          updatedChildren.splice(childIdx, 1);
-          return {
-            ...f,
-            parentMapping: {
-              ...f.parentMapping,
-              [parent]: updatedChildren,
-            },
-          };
-        }
-        return f;
-      })
-    );
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      const payload: FormData = {
-        ...form,
-        fields,
-      };
-      console.log("Submitting payload:", payload);
-      await axios.post("http://localhost:8000/api/forms", payload, {
-        headers: { "Content-Type": "application/json" },
       });
-      alert("🎉 Form created successfully!");
-      setForm({ title: "", description: "" });
-      setFields([]);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Failed to create form.");
+      return updatedFields;
+    });
+  }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    // Set default value for date_now fields to current date string
+    const updatedFields = fields.map((f) => {
+      if (f.type === 'date_now') {
+        return {
+          ...f,
+          default: new Date().toISOString().split('T')[0],
+        };
+      }
+      return f;
+    });
+
+    try {
+      const payload = {
+        title: formTitle,
+        description: formDescription,
+        fields: updatedFields,
+      };
+      console.log('Submitting form data:', payload);
+      const response = await axios.post('http://localhost:8000/api/forms', payload);
+      alert('Form created successfully!');
+      console.log(response.data);
+    } catch (error: any) {
+      console.error('Validation error:', error.response?.data?.errors || error.message);
+      alert('Error: Check console for details');
     }
   };
 
-  const renderFields = (parentId?: number) => {
-    return fields
-      .filter((f) => f.parent_field_id === parentId)
-      .map((field) => (
-        <div key={field.id} className="ml-4 border-l-2 pl-4 mt-4">
-          <div className="p-3 border border-gray-300 rounded-md bg-gray-50">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-800">{field.label || `Field ${field.id}`}</h3>
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Create Form</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Form Title"
+          value={formTitle}
+          onChange={(e) => setFormTitle(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
+
+        <textarea
+          placeholder="Form Description"
+          value={formDescription}
+          onChange={(e) => setFormDescription(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
+
+        <h2 className="text-lg font-semibold mt-6">Fields</h2>
+        {fields.map((field, index) => {
+          const parentField = field.parent_temp_id
+            ? fields.find((f) => f.temp_id === field.parent_temp_id)
+            : null;
+
+          // For nested selects, determine options by parent's selected default value
+          const parentValue = parentField?.default || '';
+          const currentOptions = field.parent_temp_id
+            ? field.nestedOptions?.[parentValue] || []
+            : field.options || [];
+
+          return (
+            <div key={field.temp_id} className="border p-4 rounded space-y-2 bg-gray-50">
+              <input
+                type="text"
+                placeholder="Field Label"
+                value={field.label}
+                onChange={(e) => updateField(index, 'label', e.target.value)}
+                className="w-full border px-3 py-1 rounded"
+                required
+              />
+
+              <select
+                value={field.type}
+
+                onChange={(e) => updateField(index, 'type', e.target.value)}
+                className="w-full border px-3 py-1 rounded"
+              >
+                <option value="text">Text</option>
+                <option value="textarea">Multi-line Text</option>
+                <option value="number">Number</option>
+                <option value="date">Date</option>
+                <option value="date_now">Date (Now)</option>
+                <option value="select">Select</option>
+                <option value="checkbox">Checkbox</option>
+                <option value="radio">Radio</option>
+                <option value="file">File</option>
+                <option value="multiselect">Multi Select</option>
+              </select>
+
+              {/* Options input for static (non-dependent) fields */}
+              {(field.type === 'select' || field.type === 'radio' || field.type === 'multiselect') &&
+                !field.parent_temp_id && (
+                  <textarea
+                    placeholder="Options (comma separated)"
+                    value={field.options?.join(',') || ''}
+                    onChange={(e) =>
+                      updateField(index, 'options', e.target.value.split(',').map((o) => o.trim()))
+                    }
+                    className="w-full border px-3 py-1 rounded"
+                  />
+                )}
+
+              {/* Nested options for dependent select fields */}
+              {field.type === 'select' && field.parent_temp_id && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nested Options (value → comma-separated children)</label>
+                 <textarea
+                    placeholder="Options (comma separated)"
+                    value={field.options?.join(',') || ''}
+                    onChange={(e) =>
+                      updateField(index, 'options', e.target.value.split(',').map((o) => o.trim()))
+                    }
+                    className="w-full border px-3 py-1 rounded"
+                  />
+                </div>
+              )}
+
+
+              {/* Default value selector for select and radio types */}
+              {(field.type === 'select' || field.type === 'radio') && (
+                <select
+                  className="w-full border px-3 py-1 rounded"
+                  value={field.default || ''}
+                  onChange={(e) => updateField(index, 'default', e.target.value)}
+                >
+                  <option value="">-- Select Default --</option>
+                  {currentOptions.map((option, i) => (
+                    <option key={i} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Checkbox default */}
+              {field.type === 'checkbox' && (
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={!!field.default}
+                    onChange={(e) => updateField(index, 'default', e.target.checked)}
+                  />
+                  <span>Default Checked</span>
+                </label>
+              )}
+
+              {/* Textarea validations */}
+              {(field.type === 'text' || field.type === 'textarea') && (
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    placeholder="Min Characters"
+                    className="w-1/2 border px-2 py-1 rounded"
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      updateField(index, 'validations', [
+                        ...(field.validations || []).filter((v) => !('minLength' in v)),
+                        { minLength: val },
+                      ]);
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max Characters"
+                    className="w-1/2 border px-2 py-1 rounded"
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      updateField(index, 'validations', [
+                        ...(field.validations || []).filter((v) => !('maxLength' in v)),
+                        { maxLength: val },
+                      ]);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Number validations */}
+              {field.type === 'number' && (
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    placeholder="Min Value"
+                    className="w-1/2 border px-2 py-1 rounded"
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      updateField(index, 'validations', [
+                        ...(field.validations || []).filter((v) => !('min' in v)),
+                        { min: val },
+                      ]);
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max Value"
+                    className="w-1/2 border px-2 py-1 rounded"
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      updateField(index, 'validations', [
+                        ...(field.validations || []).filter((v) => !('max' in v)),
+                        { max: val },
+                      ]);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* File validations */}
+              {field.type === 'file' && (
+                <input
+                  type="number"
+                  placeholder="Max File Size (MB)"
+                  className="w-full border px-2 py-1 rounded"
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    updateField(index, 'validations', [
+                      ...(field.validations || []).filter((v) => !('maxFileSize' in v)),
+                      { maxFileSize: val },
+                    ]);
+                  }}
+                />
+              )}
+
+              {/* Date_now info */}
+              {field.type === 'date_now' && (
+                <div className="text-sm text-gray-500">
+                  This field will automatically use the current date on submission.
+                </div>
+              )}
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={field.required}
+                  onChange={(e) => updateField(index, 'required', e.target.checked)}
+                />
+                <span>Required</span>
+              </label>
+
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => addField(field.id)}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded"
+                  onClick={() => addField(field.temp_id)}
                 >
-                  + Add Child
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeField(field.id)}
-                  className="text-red-600 hover:text-red-800 font-medium"
-                >
-                  ✖ Remove
-                </button>
-              </div>
-            </div>
-            <input
-              type="text"
-              name="label"
-              value={field.label}
-              onChange={(e) => handleFieldChange(field.id, e)}
-              placeholder="Field label"
-              className="w-full p-2 border border-gray-300 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <select
-              name="type"
-              value={field.type}
-              onChange={(e) => handleFieldChange(field.id, e)}
-              className="w-full p-2 border border-gray-300 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="text">Text</option>
-              <option value="number">Number</option>
-              <option value="select">Select</option>
-              <option value="radio">Radio</option>
-              <option value="checkbox">Checkbox</option>
-              <option value="date">Date</option>
-              <option value="file">File</option>
-            </select>
-            {(field.type === "select" || field.type === "radio") && (
-              <div>
-                <h4 className="font-semibold text-gray-700">Options</h4>
-                {field.options?.map((opt, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => {
-                        setFields((prev) =>
-                          prev.map((f) =>
-                            f.id === field.id ? {
-                              ...f,
-                              options: f.options?.map((o, i) => (i === idx ? e.target.value : o)),
-                            } : f
-                          )
-                        );
-                      }}
-                      placeholder={`Option ${idx + 1}`}
-                      className="p-2 border border-gray-300 rounded-md flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeOption(field.id, idx)}
-                      className="text-red-600 hover:text-red-800 font-medium"
-                    >
-                      ✖
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addOption(field.id)}
-                  className="text-blue-600 hover:text-blue-800 mt-1 font-medium"
-                >
-                  + Add Option
-                </button>
-                <h4 className="font-semibold text-gray-700 mt-2">Parent → Child Mapping</h4>
-                {Object.entries(field.parentMapping || {}).map(([parent, children], pIdx) => (
-                  <div key={pIdx} className="mb-2 border border-gray-300 rounded p-2 bg-gray-100">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-medium text-gray-800">{parent}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...fields];
-                          const fIdx = updated.findIndex((f) => f.id === field.id);
-                          if (fIdx !== -1 && updated[fIdx].parentMapping) {
-                            delete updated[fIdx].parentMapping![parent];
-                          }
-                          setFields(updated);
-                        }}
-                        className="text-red-600 hover:text-red-800 font-medium"
-                      >
-                        ✖
-                      </button>
-                    </div>
-                    <ul className="list-disc ml-5 text-gray-700 mb-2">
-                      {children.map((child, cIdx) => (
-                        <li key={cIdx} className="flex justify-between items-center">
-                          <span>{child}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeChildFromParent(field.id, parent, cIdx)}
-                            className="text-red-600 hover:text-red-800 font-medium ml-2"
-                          >
-                            ✖
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="New child option"
-                        className="p-1 border border-gray-300 rounded-md flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const input = e.target as HTMLInputElement;
-                            addChildToParent(field.id, parent, input.value);
-                            input.value = "";
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const input = document.querySelector<HTMLInputElement>(`#child-${field.id}-${pIdx}`);
-                          if (input) {
-                            addChildToParent(field.id, parent, input.value);
-                            input.value = "";
-                          }
-                        }}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        + Add Child
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    placeholder="New Parent Option"
-                    className="p-2 border border-gray-300 rounded-md flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const input = e.target as HTMLInputElement;
-                        addParentMappingEntry(field.id, input.value);
-                        input.value = "";
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = document.querySelector<HTMLInputElement>(`#parent-${field.id}`);
-                      if (input) {
-                        addParentMappingEntry(field.id, input.value);
-                        input.value = "";
-                      }
-                    }}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    + Add Parent
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          {renderFields(field.id)}
-        </div>
-      ));
-  };
 
-  return (
-    <DashboardLayout>
-      <div className="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800 text-center">📋 Nested Form Builder</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Title</label>
-            <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleFormChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Form title"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleFormChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Form description"
-            />
-          </div>
-          {renderFields()}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => addField()}
-              className="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
-              + Add Root Field
-            </button>
-            <button
-              type="submit"
-              className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex-1"
-            >
-              💾 Save Form
-            </button>
-          </div>
-        </form>
-      </div>
-    </DashboardLayout>
+                  Add Child
+                </button>
+                <button
+                  type="button"
+                  className="text-sm bg-red-500 text-white px-3 py-1 rounded"
+                  onClick={() => setFields((f) => f.filter((_, i) => i !== index))}
+                >
+                  Remove
+                </button>
+              </div>
+
+              {field.parent_temp_id && (
+                <div className="text-sm text-gray-600">
+                  ↳ Child of field: <code>{field.parent_temp_id}</code>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="flex justify-between mt-4">
+          <button
+            type="button"
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            onClick={() => addField()}
+          >
+            Add Top-Level Field
+          </button>
+          <button type="submit" className="bg-black text-white px-4 py-2 rounded">
+            Save Form
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
