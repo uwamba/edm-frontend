@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from "@/app/components/DashboardLayout";
+
 import {
   FileText,
   FileSpreadsheet,
@@ -11,6 +12,10 @@ import {
   FileTextIcon,
   FileArchive,
   File,
+  Eye,
+  Pencil,
+  Share2,
+  Trash2
 } from 'lucide-react';
 
 interface Document {
@@ -44,6 +49,7 @@ export default function DocumentsByYear({ year }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Fetch documents
   useEffect(() => {
     const fetchDocuments = async () => {
       setLoading(true);
@@ -65,6 +71,7 @@ export default function DocumentsByYear({ year }: Props) {
     fetchDocuments();
   }, [year]);
 
+  // Search filter
   useEffect(() => {
     if (!search.trim()) {
       setFiltered(documents);
@@ -80,66 +87,129 @@ export default function DocumentsByYear({ year }: Props) {
     }
   }, [search, documents]);
 
+  // DELETE document
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    try {
+      const res = await fetch(`http://localhost:8000/api/documents/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete document');
+      setDocuments((prev) => prev.filter((doc) => doc.id !== id));
+      setFiltered((prev) => prev.filter((doc) => doc.id !== id));
+    } catch (err) {
+      alert('Error deleting document');
+      console.error(err);
+    }
+  };
+
+  // EDIT document (simple example: prompt for new name)
+  const handleEdit = async (doc: Document) => {
+    const newName = prompt('Enter new name:', doc.name);
+    if (!newName || newName.trim() === '' || newName === doc.name) return;
+    try {
+      const res = await fetch(`http://localhost:8000/api/documents/${doc.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!res.ok) throw new Error('Failed to update document');
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === doc.id ? { ...d, name: newName } : d))
+      );
+      setFiltered((prev) =>
+        prev.map((d) => (d.id === doc.id ? { ...d, name: newName } : d))
+      );
+    } catch (err) {
+      alert('Error updating document');
+      console.error(err);
+    }
+  };
+
+  // SHARE document (copy link)
+  const handleShare = (doc: Document) => {
+    const shareUrl = `http://localhost:8000/storage/${doc.path}`;
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => alert('Document link copied to clipboard!'))
+      .catch((err) => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link');
+      });
+  };
+
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto p-6 bg-white text-black rounded shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Documents in folder: {year}</h1>
-          <input
-            type="text"
-            placeholder="Search documents..."
-            className="border px-3 py-1 rounded w-64"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
 
-        {loading && <p>Loading documents...</p>}
-        {error && <p className="text-red-600">{error}</p>}
-        {!loading && !error && filtered.length === 0 && (
-          <p className="text-gray-500">No documents found.</p>
-        )}
 
-        {!loading && !error && filtered.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border border-gray-300 text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 border">Type</th>
-                  <th className="px-4 py-2 border">Name</th>
-                  <th className="px-4 py-2 border">Description</th>
-                  <th className="px-4 py-2 border">Mime Type</th>
-                  <th className="px-4 py-2 border">Size (KB)</th>
-                  <th className="px-4 py-2 border">Uploaded</th>
-                  <th className="px-4 py-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border text-center">{getFileIcon(doc.mime_type)}</td>
-                    <td className="px-4 py-2 border">{doc.name}</td>
-                    <td className="px-4 py-2 border">{doc.description || '—'}</td>
-                    <td className="px-4 py-2 border">{doc.mime_type}</td>
-                    <td className="px-4 py-2 border text-right">{(doc.size / 1024).toFixed(1)}</td>
-                    <td className="px-4 py-2 border">{new Date(doc.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-2 border">
-                      <a
-                        href={`http://localhost:8000/storage/${doc.path}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        View
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+<div className="overflow-x-auto">
+  <table className="w-full table-auto border border-gray-300 text-sm shadow-sm rounded-md">
+    <thead className="bg-gray-100">
+      <tr>
+        <th className="px-4 py-3 border text-left">Type</th>
+        <th className="px-4 py-3 border text-left">Name</th>
+        <th className="px-4 py-3 border text-left">Description</th>
+        <th className="px-4 py-3 border text-left">Mime Type</th>
+        <th className="px-4 py-3 border text-right">Size (KB)</th>
+        <th className="px-4 py-3 border text-left">Uploaded</th>
+        <th className="px-4 py-3 border text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filtered.map((doc, idx) => (
+        <tr
+          key={doc.id}
+          className={`hover:bg-gray-50 ${
+            idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+          } transition-colors duration-200`}
+        >
+          <td className="px-4 py-2 border text-center text-black">{getFileIcon(doc.mime_type)}</td>
+          <td className="px-4 py-2 border font-medium">{doc.name}</td>
+          <td className="px-4 py-2 border">{doc.description || '—'}</td>
+          <td className="px-4 py-2 border">{doc.mime_type}</td>
+          <td className="px-4 py-2 border text-right">{(doc.size / 1024).toFixed(1)}</td>
+          <td className="px-4 py-2 border">{new Date(doc.created_at).toLocaleString()}</td>
+          <td className="px-4 py-2 border space-x-2 flex justify-center items-center">
+            <a
+              href={`http://localhost:8000/storage/${doc.path}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-blue-600 hover:underline px-2 py-1 rounded hover:bg-blue-100 transition"
+              aria-label={`View ${doc.name}`}
+            >
+              <Eye size={16} />
+              View
+            </a>
+            <button
+              onClick={() => handleEdit(doc)}
+              className="flex items-center gap-1 text-yellow-600 hover:underline px-2 py-1 rounded hover:bg-yellow-100 transition"
+              aria-label={`Edit ${doc.name}`}
+            >
+              <Pencil size={16} />
+              Edit
+            </button>
+            <button
+              onClick={() => handleShare(doc)}
+              className="flex items-center gap-1 text-green-600 hover:underline px-2 py-1 rounded hover:bg-green-100 transition"
+              aria-label={`Share ${doc.name}`}
+            >
+              <Share2 size={16} />
+              Share
+            </button>
+            <button
+              onClick={() => handleDelete(doc.id)}
+              className="flex items-center gap-1 text-red-600 hover:underline px-2 py-1 rounded hover:bg-red-100 transition"
+              aria-label={`Delete ${doc.name}`}
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
     </DashboardLayout>
   );
 }
