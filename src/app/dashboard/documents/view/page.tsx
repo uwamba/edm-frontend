@@ -141,75 +141,138 @@ export default function DocumentsByYear({ year }: Props) {
     <DashboardLayout>
 
 
-<div className="overflow-x-auto">
-  <table className="w-full table-auto border border-gray-300 text-sm shadow-sm rounded-md">
-    <thead className="bg-gray-100">
-      <tr>
-        <th className="px-4 py-3 border text-left">Type</th>
-        <th className="px-4 py-3 border text-left">Name</th>
-        <th className="px-4 py-3 border text-left">Description</th>
-        <th className="px-4 py-3 border text-left">Mime Type</th>
-        <th className="px-4 py-3 border text-right">Size (KB)</th>
-        <th className="px-4 py-3 border text-left">Uploaded</th>
-        <th className="px-4 py-3 border text-center">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {filtered.map((doc, idx) => (
-        <tr
-          key={doc.id}
-          className={`hover:bg-gray-50 ${
-            idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-          } transition-colors duration-200`}
-        >
-          <td className="px-4 py-2 border text-center text-black">{getFileIcon(doc.mime_type)}</td>
-          <td className="px-4 py-2 border font-medium">{doc.name}</td>
-          <td className="px-4 py-2 border">{doc.description || '—'}</td>
-          <td className="px-4 py-2 border">{doc.mime_type}</td>
-          <td className="px-4 py-2 border text-right">{(doc.size / 1024).toFixed(1)}</td>
-          <td className="px-4 py-2 border">{new Date(doc.created_at).toLocaleString()}</td>
-          <td className="px-4 py-2 border space-x-2 flex justify-center items-center">
-            <a
-              href={`http://localhost:8000/storage/${doc.path}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-600 hover:underline px-2 py-1 rounded hover:bg-blue-100 transition"
-              aria-label={`View ${doc.name}`}
-            >
-              <Eye size={16} />
-              View
-            </a>
-            <button
-              onClick={() => handleEdit(doc)}
-              className="flex items-center gap-1 text-yellow-600 hover:underline px-2 py-1 rounded hover:bg-yellow-100 transition"
-              aria-label={`Edit ${doc.name}`}
-            >
-              <Pencil size={16} />
-              Edit
-            </button>
-            <button
-              onClick={() => handleShare(doc)}
-              className="flex items-center gap-1 text-green-600 hover:underline px-2 py-1 rounded hover:bg-green-100 transition"
-              aria-label={`Share ${doc.name}`}
-            >
-              <Share2 size={16} />
-              Share
-            </button>
-            <button
-              onClick={() => handleDelete(doc.id)}
-              className="flex items-center gap-1 text-red-600 hover:underline px-2 py-1 rounded hover:bg-red-100 transition"
-              aria-label={`Delete ${doc.name}`}
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+  <div className="relative overflow-x-auto overflow-y-auto max-h-[500px] border rounded shadow-sm">
 
-    </DashboardLayout>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+          {/* Search Input */}
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or description..."
+            className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          {/* Mime Type Filter */}
+          <select
+            onChange={(e) => {
+              const type = e.target.value;
+              if (type === '') {
+                setFiltered(documents);
+              } else {
+                setFiltered(documents.filter((doc) => doc.mime_type.includes(type)));
+              }
+            }}
+            className="w-full sm:w-52 px-4 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="pdf">PDF</option>
+            <option value="word">Word</option>
+            <option value="excel">Excel</option>
+            <option value="image">Image</option>
+            <option value="zip">Zip</option>
+            <option value="text">Text</option>
+          </select>
+        </div>
+
+        <table className="w-full table-auto border border-gray-300 text-sm shadow rounded-md">
+          <thead className="bg-gray-100">
+            <tr className="text-gray-700 uppercase tracking-wide font-semibold">
+              <th className="px-4 py-3 border border-gray-300 text-left">
+                <div className="flex items-center gap-1">
+                  <FileText size={14} />
+                  Type
+                </div>
+              </th>
+              <th className="px-4 py-3 border border-gray-300 text-left">
+                <div className="flex items-center gap-1">
+                  <File size={14} />
+                  Name
+                </div>
+              </th>
+              <th className="px-4 py-3 border border-gray-300 text-left">Description</th>
+              <th className="px-4 py-3 border border-gray-300 text-left">Mime Type</th>
+              <th className="px-4 py-3 border border-gray-300 text-right">Size (KB)</th>
+              <th className="px-4 py-3 border border-gray-300 text-left">Uploaded</th>
+              <th className="px-4 py-3 border border-gray-300 text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtered.map((doc, idx) => (
+              <tr
+                key={doc.id}
+                className={`transition-colors duration-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  } hover:bg-gray-100 text-gray-800`}
+              >
+                <td className="px-4 py-3 border border-gray-300 text-center">
+                  {getFileIcon(doc.mime_type)}
+                </td>
+                <td
+                  className="px-4 py-3 border border-gray-300 font-semibold truncate max-w-[200px]"
+                  title={doc.name}
+                >
+                  {doc.name}
+                </td>
+                <td className="px-4 py-3 border border-gray-300 text-gray-600">
+                  {doc.description || '—'}
+                </td>
+                <td className="px-4 py-3 border border-gray-300 text-gray-500">
+                  {doc.mime_type}
+                </td>
+                <td className="px-4 py-3 border border-gray-300 text-right text-gray-700">
+                  {(doc.size / 1024).toFixed(1)} KB
+                </td>
+                <td className="px-4 py-3 border border-gray-300 text-gray-500 whitespace-nowrap">
+                  {new Date(doc.created_at).toLocaleString()}
+                </td>
+                <td className="px-4 py-3 border border-gray-300">
+                  <div className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start items-center gap-2">
+                    <a
+                      href={`http://localhost:8000/storage/${doc.path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:underline px-2 py-1 rounded hover:bg-blue-100 transition"
+                      aria-label={`View ${doc.name}`}
+                    >
+                      <Eye size={16} />
+                      View
+                    </a>
+                    <button
+                      onClick={() => handleEdit(doc)}
+                      className="inline-flex items-center gap-1 text-yellow-600 hover:underline px-2 py-1 rounded hover:bg-yellow-100 transition"
+                      aria-label={`Edit ${doc.name}`}
+                    >
+                      <Pencil size={16} />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleShare(doc)}
+                      className="inline-flex items-center gap-1 text-green-600 hover:underline px-2 py-1 rounded hover:bg-green-100 transition"
+                      aria-label={`Share ${doc.name}`}
+                    >
+                      <Share2 size={16} />
+                      Share
+                    </button>
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      className="inline-flex items-center gap-1 text-red-600 hover:underline px-2 py-1 rounded hover:bg-red-100 transition"
+                      aria-label={`Delete ${doc.name}`}
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+
+
+    </DashboardLayout >
   );
 }
