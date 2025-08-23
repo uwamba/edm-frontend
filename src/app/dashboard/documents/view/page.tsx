@@ -38,7 +38,7 @@ const getFileIcon = (mime: string) => {
   if (mime.includes('excel') || mime.includes('spreadsheet')) return <FileSpreadsheet className="text-green-600" />;
   if (mime.includes('image')) return <FileImage className="text-purple-600" />;
   if (mime.includes('zip') || mime.includes('rar')) return <FileArchive className="text-yellow-600" />;
-  if (mime.includes('text')) return <FileText className="text-gray-600" />;
+  if (mime.includes('text')) return <File className="text-gray-600" />;
   return <File className="text-gray-400" />;
 };
 
@@ -54,6 +54,7 @@ export default function DocumentsByYear({ year }: Props) {
   const [editDoc, setEditDoc] = useState<Document | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [newFile, setNewFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -113,29 +114,45 @@ export default function DocumentsByYear({ year }: Props) {
     setIsEditOpen(true);
   };
 
+  // ✅ Updated handleUpdateDocument
   const handleUpdateDocument = async () => {
     if (!editDoc) return;
+
     try {
+      const formData = new FormData();
+      formData.append('name', editName);
+      formData.append('description', editDescription);
+      if (newFile) formData.append('file', newFile);
+
+      // Laravel requires _method for PUT with FormData
+      formData.append('_method', 'PUT');
+
       const res = await fetch(`http://localhost:8000/api/documents/${editDoc.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName, description: editDescription }),
+        method: 'POST', // use POST but Laravel treats it as PUT
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
       });
-      if (!res.ok) throw new Error('Failed to update document');
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to update document');
+      }
+
+      const updated = await res.json();
 
       setDocuments((prev) =>
-        prev.map((d) =>
-          d.id === editDoc.id ? { ...d, name: editName, description: editDescription } : d
-        )
+        prev.map((d) => (d.id === editDoc.id ? updated : d))
       );
       setFiltered((prev) =>
-        prev.map((d) =>
-          d.id === editDoc.id ? { ...d, name: editName, description: editDescription } : d
-        )
+        prev.map((d) => (d.id === editDoc.id ? updated : d))
       );
+
       setIsEditOpen(false);
-    } catch (err) {
-      alert('Error updating document');
+      setNewFile(null);
+    } catch (err: any) {
+      alert('Error updating document: ' + err.message);
       console.error(err);
     }
   };
@@ -143,11 +160,10 @@ export default function DocumentsByYear({ year }: Props) {
   // UPDATED handleShare to also open Google Drive
   const handleShare = (doc: Document) => {
     const shareUrl = `http://localhost:8000/storage/${doc.path}`;
-    
+
     navigator.clipboard.writeText(shareUrl)
       .then(() => {
         alert('Document link copied to clipboard!');
-        // Open Google Drive in new tab
         window.open(`https://drive.google.com/drive/u/0/my-drive`, '_blank');
       })
       .catch((err) => {
@@ -241,106 +257,151 @@ export default function DocumentsByYear({ year }: Props) {
 
       {/* Edit Modal */}
       {isEditOpen && editDoc && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg relative">
-            {/* Close button */}
-            <button
-              onClick={() => setIsEditOpen(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-            >
-              <X size={20} />
-            </button>
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl relative animate-fadeInScale">
+      {/* Close button */}
+      <button
+        onClick={() => setIsEditOpen(false)}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <X size={22} />
+      </button>
 
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Edit Document</h2>
+      {/* Title */}
+      <h2 className="text-xl font-bold mb-5 text-gray-900 border-b pb-2">
+        Edit Document
+      </h2>
 
-            {/* Name */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-800">Name</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-gray-500 rounded text-gray-800 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter document name"
-              />
-            </div>
+      {/* Landscape layout */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left: Editable Fields */}
+        <div>
+          {/* Name */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder="Enter document name"
+            />
+          </div>
 
-            {/* Description */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-800">Description</label>
-              <textarea
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border-2 border-gray-500 rounded text-gray-800 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter description"
-              />
-            </div>
-
-            {/* Mime Type */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-800">Mime Type</label>
-              <input
-                type="text"
-                value={editDoc.mime_type}
-                disabled
-                className="w-full px-3 py-2 border-2 border-gray-400 rounded text-gray-800 bg-gray-100"
-              />
-            </div>
-
-            {/* Size */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-800">Size (KB)</label>
-              <input
-                type="text"
-                value={(editDoc.size / 1024).toFixed(1)}
-                disabled
-                className="w-full px-3 py-2 border-2 border-gray-400 rounded text-gray-800 bg-gray-100"
-              />
-            </div>
-
-            {/* Uploaded */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-800">Uploaded</label>
-              <input
-                type="text"
-                value={new Date(editDoc.created_at).toLocaleString()}
-                disabled
-                className="w-full px-3 py-2 border-2 border-gray-400 rounded text-gray-800 bg-gray-100"
-              />
-            </div>
-
-            {/* Path */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-800">Path</label>
-              <input
-                type="text"
-                value={editDoc.path}
-                disabled
-                className="w-full px-3 py-2 border-2 border-gray-400 rounded text-gray-800 bg-gray-100"
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setIsEditOpen(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateDocument}
-                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700"
-              >
-                Save
-              </button>
-            </div>
+          {/* Description */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              rows={5}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder="Enter description"
+            />
           </div>
         </div>
 
+        {/* Right: Document Info */}
+        <div>
+          {/* Mime Type */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mime Type</label>
+            <input
+              type="text"
+              value={editDoc.mime_type}
+              disabled
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-gray-100"
+            />
+          </div>
 
-      )}
+          {/* Size */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Size (KB)</label>
+            <input
+              type="text"
+              value={(editDoc.size / 1024).toFixed(1)}
+              disabled
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-gray-100"
+            />
+          </div>
+
+          {/* Uploaded */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Uploaded</label>
+            <input
+              type="text"
+              value={new Date(editDoc.created_at).toLocaleString()}
+              disabled
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-gray-100"
+            />
+          </div>
+
+          {/* Path */}
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
+            <input
+              type="text"
+              value={editDoc.path}
+              disabled
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-gray-100"
+            />
+          </div>
+
+          {/* Current File */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current File</label>
+            {editDoc.mime_type.startsWith("image/") ? (
+              <img
+                src={`http://localhost:8000/storage/${editDoc.path}`}
+                alt="Current file"
+                className="w-32 h-32 object-cover rounded-lg border"
+              />
+            ) : (
+              <a
+                href={`http://localhost:8000/storage/${editDoc.path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-2"
+              >
+                <FileText size={16} /> {editDoc.name}
+              </a>
+            )}
+          </div>
+
+          {/* Replace Document */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Replace Document</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+              onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+              className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
+                        file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                        file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setIsEditOpen(false)}
+          className="px-5 py-2 rounded-lg font-medium bg-gray-200 text-gray-800 hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleUpdateDocument}
+          className="px-5 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md transition"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </DashboardLayout>
   );
 }
